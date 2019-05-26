@@ -23,4 +23,7 @@ from ApiSoftwareDesign import views
 urlpatterns = [
     path('admin/', admin.site.urls),
     url(r'^insert_block_model$', views.InsertBlockModel.as_view()),
+    url(r'^insert_blocks$', views.InsertBlocks.as_view()),
+    url(r'^get_metrics$', views.GetMetrics.as_view()),
+
 ]

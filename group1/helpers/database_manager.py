@@ -1,6 +1,6 @@
 from pymongo import MongoClient
 from connection_params import CONNECTION_PARAMS as params
-from file_parser import parse_file, parse_headers, parse_headers_url
+from file_parser import parse_file, parse_headers, parse_headers_url, parse_file_url
 from general_manager import GManager
 
 class Manager:
@@ -109,10 +109,21 @@ class Manager:
 
 
 	##FORAPI##
-	def insert_new_block_model_with_name(self, mineral_deposit_name, headers_file,data_map, name_of_block_model):
-		headers = parse_headers_url(headers_file)
+	def insert_new_block_model_with_name(self, mineral_deposit_name, headers,data_map, name_of_block_model):
+
 		self.db.block_models.insert_one(
 			{"name": name_of_block_model, "mineral_deposit_name": mineral_deposit_name, "headers": headers,
 			 "data_map": data_map})
+
+	def insert_blocks_from_url(self, mineral_deposit, block_model, data_file, my_units):
+		model = self.fetch_block_model(mineral_deposit, block_model)
+		headers, amount_headers, data_map, weight_column, weight_column_index, grades_data_map = self.get_params_from_model(model)
+		data = parse_file_url(data_file)
+		data_array = []
+		grade_units = ['tonn', 'percentage', 'oz/tonn', 'ppm']
+		for item in data:
+			document = self.create_block_document(mineral_deposit,block_model,amount_headers,headers,grades_data_map,item,weight_column_index,grade_units,my_units)
+			data_array.append(document)
+		self.db.blocks.insert_many(data_array)
 
 
