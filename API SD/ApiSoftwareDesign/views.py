@@ -43,8 +43,11 @@ class InsertBlockModel(APIView):
                value = json.loads(json_acceptable_string)
             if instance =='headers' and value is not None:
                 value = value.split(',')
-            values_params[instance] = value
 
+            if instance == 'units' and value is not None:
+               json_acceptable_string = value.replace("'", "\"")
+               value = json.loads(json_acceptable_string)
+            values_params[instance] = value
         if None not in values_params.values():
             db_manager.insert_new_block_model_with_name(values_params["mineral_deposit"], values_params["headers"] ,values_params["data_map"], values_params["block_model"] )
 
@@ -62,6 +65,10 @@ class InsertBlocks(APIView):
             if instance == 'units' and value is not None:
                json_acceptable_string = value.replace("'", "\"")
                value = json.loads(json_acceptable_string)
+            if instance == 'file_block_model' and value is not None:
+               json_acceptable_string = value.replace("'", "\"")
+               value = json.loads(json_acceptable_string)
+
             values_params[instance] = value
         if None not in values_params.values():
             db_manager.insert_blocks_from_url(values_params['mineral_deposit'],values_params['block_model'], values_params['file_block_model'], values_params['units'])
@@ -71,12 +78,12 @@ class InsertBlocks(APIView):
 
 class GetMetrics(APIView):
     queryset = ''
-    def get(self, request):
+    def post(self, request):
         params = generate_params_metrics()
         values_params = {}
 
         for instance in params:
-            value = request.GET.get(instance)
+            value = request.data.get(instance)
             if instance == 'metric_wanted' and value is not None:
                 try:
                     value = int(value)
@@ -86,8 +93,7 @@ class GetMetrics(APIView):
                 value = tuple(map(int,value.split(',')))
             values_params[instance] = value
 
-
-        if None not in values_params.values():
+        if values_params['mineral_deposit'] is not None and values_params['block_model'] is not None:
             mineral_deposit = db_manager.fetch_mineral_deposit(values_params['mineral_deposit'])
             manager.set_mineral_deposit(mineral_deposit)
             if values_params['block_model']:
@@ -98,38 +104,3 @@ class GetMetrics(APIView):
             values_params['response_metric'] = response_metric
         return Response(values_params)
 
-"""
-
-def main(args):
-	db_manager = Manager()
-	manager = Container()
-	if args.insert and args.file_input:
-		insert(args, db_manager)
-	elif args.remove:
-		remove(args, db_manager)
-	elif args.metrics:
-		metrics(args,db_manager, manager)
-
-def insert (args, db_manager):
-	if not args.mineral_deposit:
-		db_manager.insert_new_mineral_deposit(args.file_input)
-	elif not args.block_model:
-		db_manager.insert_new_block_model(args.mineral_deposit, args.file_input)
-	else:
-		db_manager.insert_blocks(args.mineral_deposit, args.block_model, args.file_input)
-
-def remove(args, db_manager):
-	db_manager.remove_all_blocks_from_block_model(args.mineral_deposit, args.block_model)
-
-def metrics(args, db_manager, manager):
-	if args.mineral_deposit:
-		mineral_deposit = db_manager.fetch_mineral_deposit(args.mineral_deposit)
-		manager.set_mineral_deposit(mineral_deposit)
-		if args.block_model:
-			block_model = db_manager.fetch_block_model(args.mineral_deposit, args.block_model)
-			blocks = db_manager.get_all_blocks_from_block_model(args.mineral_deposit, args.block_model)
-			manager.set_block_model(block_model, blocks)
-	manager.interact_with_user()
-
-
-"""
